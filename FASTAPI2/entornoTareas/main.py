@@ -41,3 +41,13 @@ def ActualizarTarea(id: int, tarea: dict):
             tareas[index].update(tarea)
             return tareas[index]
     raise HTTPException(status_code=404, detail="El id de la tarea no esta registrado")
+
+#Endpoint para eliminar una tarea
+@app.delete("/tareas/{id}", tags=["Eliminar una tarea"])
+def EliminarTarea(id: int):
+    for index,tar in enumerate(tareas):
+        if tar["id"] == id:
+            tareas.pop(index)
+            return {"Mensaje": "Tarea eliminada"}
+    raise HTTPException(status_code=404, detail="El id de la tarea no esta registrado")
+
