@@ -22,3 +22,13 @@ tareas = [
 @app.get("/tareas", tags=["Obtener Tareas"])
 def ConsultarTodos():
     return {"Tareas Registradas": tareas}
+
+#Endpoint para agregar una tarea nueva
+@app.post("/tareas/", tags=["Crear una nueva tarea"])
+def AgregarTarea(tarea: dict):
+    for tar in tareas:
+        if tar["id"] == tarea.get("id"):
+            raise HTTPException(status_code=400, detail="El id de la tarea ya esta registrado")
+        
+    tareas.append(tarea)
+    return tarea
