@@ -32,3 +32,12 @@ def AgregarTarea(tarea: dict):
         
     tareas.append(tarea)
     return tarea
+
+#Endpoint para actualizar una tarea
+@app.put("/tareas/{id}", tags=["Actualizar una tarea"])
+def ActualizarTarea(id: int, tarea: dict):
+    for index,tar in enumerate(tareas):
+        if tar["id"] == id:
+            tareas[index].update(tarea)
+            return tareas[index]
+    raise HTTPException(status_code=404, detail="El id de la tarea no esta registrado")
