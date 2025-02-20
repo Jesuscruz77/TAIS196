@@ -23,6 +23,14 @@ tareas = [
 def ConsultarTodos():
     return {"Tareas Registradas": tareas}
 
+#Endpoint para consultar una tarea por su id
+@app.get("/tareas/{id}", tags=["Obtener una tarea"])
+def ConsultarTarea(id: int):
+    for tar in tareas:
+        if tar["id"] == id:
+            return tar
+    raise HTTPException(status_code=404, detail="El id de la tarea no esta registrado")
+
 #Endpoint para agregar una tarea nueva
 @app.post("/tareas/", tags=["Crear una nueva tarea"])
 def AgregarTarea(tarea: dict):
@@ -32,14 +40,6 @@ def AgregarTarea(tarea: dict):
         
     tareas.append(tarea)
     return tarea
-
-#Endpoint para consultar una tarea por su id
-@app.get("/tareas/{id}", tags=["Obtener una tarea"])
-def ConsultarTarea(id: int):
-    for tar in tareas:
-        if tar["id"] == id:
-            return tar
-    raise HTTPException(status_code=404, detail="El id de la tarea no esta registrado")
 
 #Endpoint para actualizar una tarea
 @app.put("/tareas/{id}", tags=["Actualizar una tarea"])
