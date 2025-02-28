@@ -1,6 +1,8 @@
 from fastapi import FastAPI, HTTPException  # type: ignore
+from fastapi.responses import JSONResponse  # type: ignore
 from typing import Optional, List
-from modelsPydantic import modelUsuario
+from modelsPydantic import modelUsuario, modelAuth
+from tokenGen import createToken
 
 app = FastAPI(
     title="Mi primer API 196",
@@ -20,6 +22,16 @@ usuarios = [
 @app.get("/",  tags=["Inicio"]) 
 def main(): #
     return {"Hello FastAPI": "Jesús Cruz"}
+
+#Endpoint de tipo post que se llama autenticar
+@app.post("/auth", tags=["Autenticacion"])
+def login(autorizado: modelAuth):
+    if autorizado.correo == "jesus@example.com" and autorizado.contrasena == "123456789":
+        token:str = createToken(autorizado.model_dump())
+        return {"Usuario Autorizado": token}
+    else: 
+        return {"Aviso": "Usuario no autorizado"}
+    
 
 #Endpoint para consultar todos los usuarios
 @app.get("/usuarios", response_model = List[modelUsuario], tags=["Operaciones Crud"])
@@ -54,3 +66,4 @@ def EliminarUsuario(id: int):
             usuarios.pop(index)
             return {"Mensaje": "Usuario eliminado"}
     raise HTTPException(status_code=404, detail="El id no esta registrado")
+
