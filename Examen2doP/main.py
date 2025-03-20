@@ -33,7 +33,7 @@ def crearenvio(envio:modelEnvios):
 @app.delete("/envios/{cp}",response_model = modelEnvios, tags=["Envios"])
 def eliminarenvio(cp: str):
     for index, envio in enumerate(envios):
-        if envio["cp"] == cp:
+        if envio[cp] == cp:
             eliminae = envios.pop(index)
             return eliminae
     raise HTTPException(status_code=404, detail="El envio no existe")
