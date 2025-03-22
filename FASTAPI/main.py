@@ -4,12 +4,16 @@ from typing import Optional, List
 from modelsPydantic import modelUsuario, modelAuth
 from tokenGen import createToken
 from middlewares import BearerJWT
+from DB.conexion import Session, engine, Base 
+from models.modelsDB import User # sirve para importar la clase User y la clase Base
 
 app = FastAPI(
     title="Mi primer API 196",
     description="Jesús Cruz",
     version="1.0.1"
 ) 
+
+Base.metadata.create_all(bind=engine) # se levanta la tablas definidas en los modelos
 
 usuarios = [
     {"id": 1, "nombre": "Jesús Cruz", "correo": "jesus@gmail.com","edad": 21},
@@ -39,13 +43,17 @@ def ConsultarTodos():
 
 #Endpoint para agregar un usuario
 @app.post("/usuarios/", response_model = modelUsuario, tags=["Operaciones Crud"])
-def AgregarUsuario(usuario: modelUsuario):
-    for usr in usuarios:
-        if usr["id"] == usuario.id:
-            raise HTTPException(status_code=400, detail="El id ya esta registrado")
-        
-    usuarios.append(usuario)
-    return usuario
+def AgregarUsuario(usuarionuevo: modelUsuario):
+    db = Session()
+    try:
+        db.add(User(**usuarionuevo.model_dump()))
+        db.commit()
+        return JSONResponse(status_code=201, content={"mensaje": "Usuario creado", "usuario": usuarionuevo.model_dump()})
+    except Exception as e:
+        db.rollback()
+        return JSONResponse(status_code=500, content={"mensaje": "Error al crear el usuario", "error": str(e)})
+    finally:
+        db.close()
 
 #Endpoint para actualizar el usuario
 @app.put("/usuarios/{id}", response_model = modelUsuario, tags=["Operaciones Crud"])
