@@ -1,11 +1,13 @@
 from fastapi import FastAPI, HTTPException, Depends  # type: ignore
 from fastapi.responses import JSONResponse  # type: ignore
+from fastapi.encoders import jsonable_encoder  # type: ignore Sirve para convertir un objeto en un diccionario
 from typing import Optional, List
 from modelsPydantic import modelUsuario, modelAuth
 from tokenGen import createToken
 from middlewares import BearerJWT
 from DB.conexion import Session, engine, Base 
 from models.modelsDB import User # sirve para importar la clase User y la clase Base
+
 
 app = FastAPI(
     title="Mi primer API 196",
@@ -26,20 +28,35 @@ usuarios = [
 def main(): #
     return {"Hello FastAPI": "Jesús Cruz"}
 
-#Endpoint de tipo post que se llama autenticar
-@app.post("/auth", tags=["Autenticacion"])
-def login(autorizado: modelAuth):
-    if autorizado.correo == "jesus@example.com" and autorizado.contrasena == "123456789":
-        token:str = createToken(autorizado.model_dump())
-        return JSONResponse(content= token)
-    else: 
-        return {"Aviso": "Usuario no autorizado"}
-    
+
 
 #Endpoint para consultar todos los usuarios
-@app.get("/usuarios", dependencies = [Depends(BearerJWT())] , response_model = List[modelUsuario], tags=["Operaciones Crud"])
+@app.get("/usuarios", tags=["Operaciones Crud"])
 def ConsultarTodos():
-    return usuarios
+    db = Session()
+    try:
+        consulta = db.query(User).all()
+        return JSONResponse(content= jsonable_encoder(consulta))
+    except Exception as x:
+        return JSONResponse(status_code=500, content={"mensaje": "No fue posible consultar usuarios", "error": str(x)})
+    finally:
+        db.close()
+    
+#Endpoint para consultar un usuario por id
+@app.get("/usuarios/{id}", tags=["Operaciones Crud"])
+def ConsultarUno(id: int):
+    db = Session()
+    try:
+        consulta = db.query(User).filter(User.id == id).first()
+        if not consulta:
+            raise HTTPException(status_code=404, content = {"mensaje": "Usuario no encontrado"})
+        return JSONResponse(content= jsonable_encoder(consulta))
+        
+    except Exception as x:
+        return JSONResponse(status_code=500, content={"mensaje": "No fue posible consultar usuarios", "error": str(x)})
+    finally:
+        db.close()
+
 
 #Endpoint para agregar un usuario
 @app.post("/usuarios/", response_model = modelUsuario, tags=["Operaciones Crud"])
@@ -55,22 +72,34 @@ def AgregarUsuario(usuarionuevo: modelUsuario):
     finally:
         db.close()
 
-#Endpoint para actualizar el usuario
-@app.put("/usuarios/{id}", response_model = modelUsuario, tags=["Operaciones Crud"])
-def ActualizarUsuario(id: int, usuario_actualizado: modelUsuario):
-    for index,usr in enumerate(usuarios):
-        if usr["id"] == id:
-            usuarios[index] = usuario_actualizado.model_dump()
-            return usuarios[index] 
+
         
-    raise HTTPException(status_code=404, detail="El id no esta registrado")
 
-#Endpoint para eliminar un usuario
-@app.delete("/usuarios/{id}", tags=["Operaciones Crud"])
-def EliminarUsuario(id: int):
-    for index,usr in enumerate(usuarios):
-        if usr["id"] == id:
-            usuarios.pop(index)
-            return {"Mensaje": "Usuario eliminado"}
-    raise HTTPException(status_code=404, detail="El id no esta registrado")
+# #Endpoint para actualizar el usuario
+# @app.put("/usuarios/{id}", response_model = modelUsuario, tags=["Operaciones Crud"])
+# def ActualizarUsuario(id: int, usuario_actualizado: modelUsuario):
+#     for index,usr in enumerate(usuarios):
+#         if usr["id"] == id:
+#             usuarios[index] = usuario_actualizado.model_dump()
+#             return usuarios[index] 
+        
+#     raise HTTPException(status_code=404, detail="El id no esta registrado")
 
+# #Endpoint para eliminar un usuario
+# @app.delete("/usuarios/{id}", tags=["Operaciones Crud"])
+# def EliminarUsuario(id: int):
+#     for index,usr in enumerate(usuarios):
+#         if usr["id"] == id:
+#             usuarios.pop(index)
+#             return {"Mensaje": "Usuario eliminado"}
+#     raise HTTPException(status_code=404, detail="El id no esta registrado")
+
+#Endpoint de tipo post que se llama autenticar
+@app.post("/auth", tags=["Autenticacion"])
+def login(autorizado: modelAuth):
+    if autorizado.correo == "jesus@example.com" and autorizado.contrasena == "123456789":
+        token:str = createToken(autorizado.model_dump())
+        return JSONResponse(content= token)
+    else: 
+        return {"Aviso": "Usuario no autorizado"}
+    
