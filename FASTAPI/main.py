@@ -72,15 +72,55 @@ def AgregarUsuario(usuarionuevo: modelUsuario):
     finally:
         db.close()
 
+#Endpoint para actualizar un usuario
+@app.put("/usuarios/{id}", response_model = modelUsuario, tags=["Operaciones Crud"])
+def ActualizarUsuario(id: int, usr_act: modelUsuario):
+    db = Session()
+    try:
+        actualizar = db.query(User).filter(User.id == id).first()
+        if not actualizar:
+            return JSONResponse(status_code=404, content={"mensaje": "Usuario no encontrado"})
+        for key, value in usr_act.model_dump().items():
+            setattr(actualizar, key, value)
+        db.commit()
+        return JSONResponse(content={"mensaje": "Usuario actualizado", "usuario": usr_act.model_dump()})
+    
+    except Exception as e:
+        db.rollback()
+        return JSONResponse(status_code=500, content={"mensaje": "Error al actualizar el usuario", "error": str(e)})
+    
+    finally:
+        db.close()
 
-        
+
+#Endpoint para eliminar un usuario
+@app.delete("/usuarios/{id}", tags=["Operaciones Crud"])
+def EliminarUsuario(id: int):
+    db = Session()
+    try:
+        eliminar = db.query(User).filter(User.id == id).first()
+        if not eliminar:
+            return JSONResponse(status_code=404, content={"mensaje": "Usuario no encontrado"})
+        db.delete(eliminar)
+        db.commit()
+        return JSONResponse(content={"mensaje": "Usuario eliminado"})
+    
+    except Exception as e:
+        db.rollback()
+        return JSONResponse(status_code=500, content={"mensaje": "Error al eliminar el usuario", "error": str(e)})
+    
+    finally:
+        db.close()
+
+
+
 
 # #Endpoint para actualizar el usuario
 # @app.put("/usuarios/{id}", response_model = modelUsuario, tags=["Operaciones Crud"])
-# def ActualizarUsuario(id: int, usuario_actualizado: modelUsuario):
+# def ActualizarUsuario(id: int, usr_act: modelUsuario):
 #     for index,usr in enumerate(usuarios):
 #         if usr["id"] == id:
-#             usuarios[index] = usuario_actualizado.model_dump()
+#             usuarios[index] = usr_act.model_dump()
 #             return usuarios[index] 
         
 #     raise HTTPException(status_code=404, detail="El id no esta registrado")
